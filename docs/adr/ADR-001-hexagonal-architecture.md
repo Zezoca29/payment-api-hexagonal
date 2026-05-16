@@ -4,7 +4,7 @@
 |-------------|-----------------------------------|
 | **Status**  | Accepted                          |
 | **Date**    | 2024-06-01                        |
-| **Author**  | HexaPay Team                      |
+| **Author**  | Kaique Augusto da Cruz Zeza       |
 
 ---
 

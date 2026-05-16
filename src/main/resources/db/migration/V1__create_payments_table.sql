@@ -1,6 +1,6 @@
 -- ============================================================
 -- V1 — Initial schema: payments table
--- Author : HexaPay Team
+-- Author : Kaique Augusto da Cruz Zeza
 -- Date   : 2024-06-01
 -- ============================================================
 

@@ -1,7 +1,7 @@
 # HexaPay — Payment API
 
-[![CI/CD](https://github.com/YOUR_USERNAME/hexapay/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/YOUR_USERNAME/hexapay/actions/workflows/ci-cd.yml)
-[![Coverage](https://codecov.io/gh/YOUR_USERNAME/hexapay/branch/main/graph/badge.svg)](https://codecov.io/gh/YOUR_USERNAME/hexapay)
+[![CI/CD](https://github.com/Zezoca29/payment-api-hexagonal/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/Zezoca29/payment-api-hexagonal/actions/workflows/ci-cd.yml)
+[![Coverage](https://codecov.io/gh/Zezoca29/payment-api-hexagonal/branch/main/graph/badge.svg)](https://codecov.io/gh/Zezoca29/payment-api-hexagonal)
 [![Java](https://img.shields.io/badge/Java-21-orange?logo=openjdk)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.4-brightgreen?logo=springboot)](https://spring.io/projects/spring-boot)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-blue?logo=postgresql)](https://www.postgresql.org/)
@@ -36,15 +36,15 @@ This project implements **Hexagonal Architecture** (Ports & Adapters), coined by
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                           LEFT (Driving) Side                           │
 │                                                                         │
-│   REST Client ──► PaymentController ──► CreatePaymentUseCase (port in) │
-│   Swagger UI  ──►         │          ──► RefundPaymentUseCase  (port in) │
-│                           │          ──► QueryPaymentUseCase   (port in) │
+│   REST Client ──► PaymentController ──► CreatePaymentUseCase (port in)  │
+│   Swagger UI  ──►         │          ──► RefundPaymentUseCase  (port in)│
+│                           │          ──► QueryPaymentUseCase   (port in)│
 │                           │                                             │
 │  ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─│─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ │
 │                           │         APPLICATION CORE                    │
 │                           ▼                                             │
 │              ┌─────────────────────────┐                                │
-│              │       Domain Model       │                                │
+│              │       Domain Model      │                               │
 │              │  Payment · Money        │                                │
 │              │  PaymentStatus          │                                │
 │              │  PaymentMethod          │                                │
@@ -122,8 +122,8 @@ Payments is one of the most regulated, audited, and failure-sensitive domains in
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/hexapay.git
-cd hexapay
+git clone https://github.com/Zezoca29/payment-api-hexagonal.git
+cd payment-api-hexagonal
 
 # 2. Start all services (PostgreSQL + API)
 docker compose up --build
