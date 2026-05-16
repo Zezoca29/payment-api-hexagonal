@@ -5,6 +5,7 @@ import com.hexapay.payments.domain.exception.PaymentNotFoundException;
 import com.hexapay.payments.domain.model.Money;
 import com.hexapay.payments.domain.model.Payment;
 import com.hexapay.payments.domain.model.PaymentMethod;
+import com.hexapay.payments.domain.model.PaymentPage;
 import com.hexapay.payments.domain.model.PaymentStatus;
 import com.hexapay.payments.domain.port.out.LoadPaymentPort;
 import org.junit.jupiter.api.DisplayName;
@@ -58,12 +59,13 @@ class QueryPaymentServiceTest {
     @DisplayName("findByStatus() should delegate to port")
     void shouldFindByStatus() {
         Payment payment = aPayment();
-        when(loadPaymentPort.findByStatus(PaymentStatus.PENDING)).thenReturn(List.of(payment));
+        PaymentPage page = new PaymentPage(List.of(payment), 0, 20, 1L, 1);
+        when(loadPaymentPort.findByStatus(PaymentStatus.PENDING, 0, 20)).thenReturn(page);
 
-        List<Payment> result = queryPaymentService.findByStatus(PaymentStatus.PENDING);
+        PaymentPage result = queryPaymentService.findByStatus(PaymentStatus.PENDING, 0, 20);
 
-        assertThat(result).containsExactly(payment);
-        verify(loadPaymentPort).findByStatus(PaymentStatus.PENDING);
+        assertThat(result.content()).containsExactly(payment);
+        verify(loadPaymentPort).findByStatus(PaymentStatus.PENDING, 0, 20);
     }
 
     @Test
@@ -72,11 +74,12 @@ class QueryPaymentServiceTest {
         LocalDateTime from = LocalDateTime.of(2024, 1, 1, 0, 0);
         LocalDateTime to = LocalDateTime.of(2024, 12, 31, 23, 59);
         Payment payment = aPayment();
-        when(loadPaymentPort.findByCreatedAtBetween(from, to)).thenReturn(List.of(payment));
+        PaymentPage page = new PaymentPage(List.of(payment), 0, 20, 1L, 1);
+        when(loadPaymentPort.findByCreatedAtBetween(from, to, 0, 20)).thenReturn(page);
 
-        List<Payment> result = queryPaymentService.findByDateRange(from, to);
+        PaymentPage result = queryPaymentService.findByDateRange(from, to, 0, 20);
 
-        assertThat(result).containsExactly(payment);
+        assertThat(result.content()).containsExactly(payment);
     }
 
     @Test
@@ -86,7 +89,7 @@ class QueryPaymentServiceTest {
         LocalDateTime to = LocalDateTime.of(2024, 1, 1, 0, 0);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> queryPaymentService.findByDateRange(from, to))
+                .isThrownBy(() -> queryPaymentService.findByDateRange(from, to, 0, 20))
                 .withMessageContaining("'from' date must be before");
 
         verifyNoInteractions(loadPaymentPort);
@@ -96,11 +99,12 @@ class QueryPaymentServiceTest {
     @DisplayName("findByMerchant() should delegate to port")
     void shouldFindByMerchant() {
         Payment payment = aPayment();
-        when(loadPaymentPort.findByMerchantId("merchant-001")).thenReturn(List.of(payment));
+        PaymentPage page = new PaymentPage(List.of(payment), 0, 20, 1L, 1);
+        when(loadPaymentPort.findByMerchantId("merchant-001", 0, 20)).thenReturn(page);
 
-        List<Payment> result = queryPaymentService.findByMerchant("merchant-001");
+        PaymentPage result = queryPaymentService.findByMerchant("merchant-001", 0, 20);
 
-        assertThat(result).containsExactly(payment);
+        assertThat(result.content()).containsExactly(payment);
     }
 
     private Payment aPayment() {

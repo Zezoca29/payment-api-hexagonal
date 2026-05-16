@@ -66,6 +66,12 @@
             <version>${springdoc.version}</version>
         </dependency>
 
+        <!-- ═══ Security ═══ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
         <!-- ═══ Utilities ═══ -->
         <dependency>
             <groupId>org.projectlombok</groupId>

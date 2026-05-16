@@ -13,6 +13,10 @@ spring:
   flyway:
     enabled: true
 
+app:
+  security:
+    api-key: test-api-key-hexapay
+
 logging:
   level:
     com.hexapay: DEBUG
