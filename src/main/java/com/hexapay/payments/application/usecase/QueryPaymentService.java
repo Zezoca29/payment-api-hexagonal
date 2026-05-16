@@ -2,6 +2,7 @@ package com.hexapay.payments.application.usecase;
 
 import com.hexapay.payments.domain.exception.PaymentNotFoundException;
 import com.hexapay.payments.domain.model.Payment;
+import com.hexapay.payments.domain.model.PaymentPage;
 import com.hexapay.payments.domain.model.PaymentStatus;
 import com.hexapay.payments.domain.port.in.QueryPaymentUseCase;
 import com.hexapay.payments.domain.port.out.LoadPaymentPort;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -36,26 +36,26 @@ public class QueryPaymentService implements QueryPaymentUseCase {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Payment> findByStatus(PaymentStatus status) {
-        log.debug("Querying payments with status='{}'", status);
-        return loadPaymentPort.findByStatus(status);
+    public PaymentPage findByStatus(PaymentStatus status, int page, int size) {
+        log.debug("Querying payments with status='{}' (page={}, size={})", status, page, size);
+        return loadPaymentPort.findByStatus(status, page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Payment> findByDateRange(LocalDateTime from, LocalDateTime to) {
+    public PaymentPage findByDateRange(LocalDateTime from, LocalDateTime to, int page, int size) {
         if (from.isAfter(to)) {
             throw new IllegalArgumentException(
                     "The 'from' date must be before the 'to' date. from=" + from + ", to=" + to);
         }
-        log.debug("Querying payments between {} and {}", from, to);
-        return loadPaymentPort.findByCreatedAtBetween(from, to);
+        log.debug("Querying payments between {} and {} (page={}, size={})", from, to, page, size);
+        return loadPaymentPort.findByCreatedAtBetween(from, to, page, size);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Payment> findByMerchant(String merchantId) {
-        log.debug("Querying payments for merchant='{}'", merchantId);
-        return loadPaymentPort.findByMerchantId(merchantId);
+    public PaymentPage findByMerchant(String merchantId, int page, int size) {
+        log.debug("Querying payments for merchant='{}' (page={}, size={})", merchantId, page, size);
+        return loadPaymentPort.findByMerchantId(merchantId, page, size);
     }
 }

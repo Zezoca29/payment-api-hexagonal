@@ -1,9 +1,11 @@
 package com.hexapay.payments.adapters.in.web;
 
 import com.hexapay.payments.adapters.in.web.dto.CreatePaymentRequest;
+import com.hexapay.payments.adapters.in.web.dto.PagedPaymentResponse;
 import com.hexapay.payments.adapters.in.web.dto.PaymentResponse;
 import com.hexapay.payments.adapters.in.web.mapper.PaymentWebMapper;
 import com.hexapay.payments.domain.model.Payment;
+import com.hexapay.payments.domain.model.PaymentPage;
 import com.hexapay.payments.domain.model.PaymentStatus;
 import com.hexapay.payments.domain.port.in.CreatePaymentUseCase;
 import com.hexapay.payments.domain.port.in.QueryPaymentUseCase;
@@ -23,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Primary adapter — exposes the payment domain via a REST API.
@@ -86,10 +89,11 @@ public class PaymentController {
 
     @GetMapping
     @Operation(
-            summary = "List payments with optional filters",
-            description = "Filter by status, date range, or merchantId. Provide exactly one filter at a time."
+            summary = "List payments with optional filters (paginated)",
+            description = "Filter by status, date range, or merchantId. Provide exactly one filter at a time. " +
+                    "Results are paginated — use 'page' (0-based) and 'size' to navigate."
     )
-    public List<PaymentResponse> listPayments(
+    public PagedPaymentResponse listPayments(
             @Parameter(description = "Filter by payment status (PENDING, COMPLETED, FAILED, REFUNDED)")
             @RequestParam(required = false) PaymentStatus status,
 
@@ -102,21 +106,38 @@ public class PaymentController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
 
             @Parameter(description = "Filter by merchant identifier")
-            @RequestParam(required = false) String merchantId
+            @RequestParam(required = false) String merchantId,
+
+            @Parameter(description = "Zero-based page index (default 0)")
+            @RequestParam(defaultValue = "0") int page,
+
+            @Parameter(description = "Page size — number of items per page (default 20, max 100)")
+            @RequestParam(defaultValue = "20") int size
     ) {
+        int clampedSize = Math.min(size, 100);
+        PaymentPage result;
         if (status != null) {
-            return toResponseList(queryPaymentUseCase.findByStatus(status));
+            result = queryPaymentUseCase.findByStatus(status, page, clampedSize);
+        } else if (from != null && to != null) {
+            result = queryPaymentUseCase.findByDateRange(from, to, page, clampedSize);
+        } else if (merchantId != null) {
+            result = queryPaymentUseCase.findByMerchant(merchantId, page, clampedSize);
+        } else {
+            result = new PaymentPage(List.of(), 0, clampedSize, 0L, 0);
         }
-        if (from != null && to != null) {
-            return toResponseList(queryPaymentUseCase.findByDateRange(from, to));
-        }
-        if (merchantId != null) {
-            return toResponseList(queryPaymentUseCase.findByMerchant(merchantId));
-        }
-        return List.of();
+        return toPagedResponse(result);
     }
 
-    private List<PaymentResponse> toResponseList(List<Payment> payments) {
-        return payments.stream().map(mapper::toResponse).toList();
+    private PagedPaymentResponse toPagedResponse(PaymentPage paymentPage) {
+        List<PaymentResponse> content = paymentPage.content().stream()
+                .map(mapper::toResponse)
+                .collect(Collectors.toList());
+        return new PagedPaymentResponse(
+                content,
+                paymentPage.pageNumber(),
+                paymentPage.pageSize(),
+                paymentPage.totalElements(),
+                paymentPage.totalPages()
+        );
     }
 }

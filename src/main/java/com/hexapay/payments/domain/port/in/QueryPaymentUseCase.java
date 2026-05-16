@@ -1,10 +1,10 @@
 package com.hexapay.payments.domain.port.in;
 
 import com.hexapay.payments.domain.model.Payment;
+import com.hexapay.payments.domain.model.PaymentPage;
 import com.hexapay.payments.domain.model.PaymentStatus;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -12,6 +12,7 @@ import java.util.UUID;
  *
  * Provides read access to the payment domain.
  * Query operations are intentionally split from command operations (CQRS-lite).
+ * All list operations are paginated to prevent unbounded result sets.
  */
 public interface QueryPaymentUseCase {
 
@@ -23,19 +24,19 @@ public interface QueryPaymentUseCase {
     Payment findById(UUID id);
 
     /**
-     * Returns all payments with the given status.
+     * Returns a page of payments with the given status, ordered by creation date descending.
      */
-    List<Payment> findByStatus(PaymentStatus status);
+    PaymentPage findByStatus(PaymentStatus status, int page, int size);
 
     /**
-     * Returns all payments created within the specified date-time range (inclusive).
+     * Returns a page of payments created within the specified date-time range (inclusive).
      *
      * @throws IllegalArgumentException if {@code from} is after {@code to}
      */
-    List<Payment> findByDateRange(LocalDateTime from, LocalDateTime to);
+    PaymentPage findByDateRange(LocalDateTime from, LocalDateTime to, int page, int size);
 
     /**
-     * Returns all payments associated with the given merchant.
+     * Returns a page of payments associated with the given merchant.
      */
-    List<Payment> findByMerchant(String merchantId);
+    PaymentPage findByMerchant(String merchantId, int page, int size);
 }

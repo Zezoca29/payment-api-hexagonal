@@ -2,12 +2,19 @@ package com.hexapay.payments.integration;
 
 import com.hexapay.payments.adapters.in.web.dto.CreatePaymentRequest;
 import com.hexapay.payments.adapters.in.web.dto.ErrorResponse;
+import com.hexapay.payments.adapters.in.web.dto.PagedPaymentResponse;
 import com.hexapay.payments.adapters.in.web.dto.PaymentResponse;
+import com.hexapay.payments.config.security.ApiKeyAuthFilter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ActiveProfiles;
@@ -50,6 +57,23 @@ class PaymentControllerIntegrationTest {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Value("${app.security.api-key}")
+    private String apiKey;
+
+    private HttpHeaders authHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(ApiKeyAuthFilter.API_KEY_HEADER, apiKey);
+        return headers;
+    }
+
+    private <T> HttpEntity<T> withAuth(T body) {
+        return new HttpEntity<>(body, authHeaders());
+    }
+
+    private HttpEntity<Void> withAuth() {
+        return new HttpEntity<>(authHeaders());
+    }
+
     // ─── Create ───────────────────────────────────────────────────────────────
 
     @Test
@@ -58,7 +82,7 @@ class PaymentControllerIntegrationTest {
         var request = createRequest();
 
         ResponseEntity<PaymentResponse> response =
-                restTemplate.postForEntity("/api/v1/payments", request, PaymentResponse.class);
+                restTemplate.postForEntity("/api/v1/payments", withAuth(request), PaymentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getBody()).isNotNull();
@@ -69,12 +93,21 @@ class PaymentControllerIntegrationTest {
     }
 
     @Test
+    @DisplayName("POST /api/v1/payments — should return 401 when API key is missing")
+    void shouldReturn401WhenApiKeyMissing() {
+        ResponseEntity<String> response =
+                restTemplate.postForEntity("/api/v1/payments", createRequest(), String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+    }
+
+    @Test
     @DisplayName("POST /api/v1/payments — should return 400 for missing required fields")
     void shouldReturn400OnValidationError() {
         var invalid = new CreatePaymentRequest("", BigDecimal.valueOf(100), "BRL", "PIX", "Test");
 
         ResponseEntity<ErrorResponse> response =
-                restTemplate.postForEntity("/api/v1/payments", invalid, ErrorResponse.class);
+                restTemplate.postForEntity("/api/v1/payments", withAuth(invalid), ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
@@ -89,7 +122,8 @@ class PaymentControllerIntegrationTest {
         PaymentResponse created = createPaymentAndGet();
 
         ResponseEntity<PaymentResponse> response =
-                restTemplate.getForEntity("/api/v1/payments/" + created.id(), PaymentResponse.class);
+                restTemplate.exchange("/api/v1/payments/" + created.id(),
+                        HttpMethod.GET, withAuth(), PaymentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
@@ -100,7 +134,8 @@ class PaymentControllerIntegrationTest {
     @DisplayName("GET /api/v1/payments/{id} — should return 404 for unknown ID")
     void shouldReturn404ForUnknownId() {
         ResponseEntity<ErrorResponse> response =
-                restTemplate.getForEntity("/api/v1/payments/" + UUID.randomUUID(), ErrorResponse.class);
+                restTemplate.exchange("/api/v1/payments/" + UUID.randomUUID(),
+                        HttpMethod.GET, withAuth(), ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
         assertThat(response.getBody()).isNotNull();
@@ -115,7 +150,7 @@ class PaymentControllerIntegrationTest {
         PaymentResponse payment = createPaymentAndGet();
 
         ResponseEntity<ErrorResponse> response = restTemplate.postForEntity(
-                "/api/v1/payments/" + payment.id() + "/refund", null, ErrorResponse.class);
+                "/api/v1/payments/" + payment.id() + "/refund", withAuth(), ErrorResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNPROCESSABLE_ENTITY);
         assertThat(response.getBody().code()).isEqualTo("INVALID_PAYMENT_STATE");
@@ -124,16 +159,19 @@ class PaymentControllerIntegrationTest {
     // ─── List ─────────────────────────────────────────────────────────────────
 
     @Test
-    @DisplayName("GET /api/v1/payments?status=PENDING — should filter by status")
+    @DisplayName("GET /api/v1/payments?status=PENDING — should return paginated results filtered by status")
     void shouldFilterByStatus() {
         createPaymentAndGet(); // ensure at least one PENDING payment
 
-        ResponseEntity<PaymentResponse[]> response =
-                restTemplate.getForEntity("/api/v1/payments?status=PENDING", PaymentResponse[].class);
+        ResponseEntity<PagedPaymentResponse> response =
+                restTemplate.exchange("/api/v1/payments?status=PENDING",
+                        HttpMethod.GET, withAuth(), PagedPaymentResponse.class);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody()).allMatch(p -> "PENDING".equals(p.status()));
+        assertThat(response.getBody().content()).isNotEmpty();
+        assertThat(response.getBody().content()).allMatch(p -> "PENDING".equals(p.status()));
+        assertThat(response.getBody().totalElements()).isGreaterThan(0);
     }
 
     // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -150,7 +188,7 @@ class PaymentControllerIntegrationTest {
 
     private PaymentResponse createPaymentAndGet() {
         ResponseEntity<PaymentResponse> response =
-                restTemplate.postForEntity("/api/v1/payments", createRequest(), PaymentResponse.class);
+                restTemplate.postForEntity("/api/v1/payments", withAuth(createRequest()), PaymentResponse.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         return response.getBody();
     }

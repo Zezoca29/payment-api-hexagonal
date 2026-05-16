@@ -1,11 +1,16 @@
 package com.hexapay.payments.adapters.out.persistence;
 
+import com.hexapay.payments.adapters.out.persistence.entity.PaymentEntity;
 import com.hexapay.payments.adapters.out.persistence.mapper.PaymentPersistenceMapper;
 import com.hexapay.payments.domain.model.Payment;
+import com.hexapay.payments.domain.model.PaymentPage;
 import com.hexapay.payments.domain.model.PaymentStatus;
 import com.hexapay.payments.domain.port.out.LoadPaymentPort;
 import com.hexapay.payments.domain.port.out.SavePaymentPort;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -22,6 +27,9 @@ import java.util.UUID;
  *
  * Dependency direction:
  *   Domain → Port Interface ← This Adapter → JpaRepository → PostgreSQL
+ *
+ * Spring Data's {@code Page<T>} is mapped to the domain {@link PaymentPage} here,
+ * keeping the domain layer free of any framework dependency.
  */
 @Component
 @RequiredArgsConstructor
@@ -43,26 +51,31 @@ public class PaymentPersistenceAdapter implements SavePaymentPort, LoadPaymentPo
     }
 
     @Override
-    public List<Payment> findByStatus(PaymentStatus status) {
-        return repository.findByStatus(status.name())
-                .stream()
-                .map(mapper::toDomain)
-                .toList();
+    public PaymentPage findByStatus(PaymentStatus status, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return toPaymentPage(repository.findByStatus(status.name(), pageable));
     }
 
     @Override
-    public List<Payment> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to) {
-        return repository.findByCreatedAtBetween(from, to)
-                .stream()
-                .map(mapper::toDomain)
-                .toList();
+    public PaymentPage findByCreatedAtBetween(LocalDateTime from, LocalDateTime to, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return toPaymentPage(repository.findByCreatedAtBetween(from, to, pageable));
     }
 
     @Override
-    public List<Payment> findByMerchantId(String merchantId) {
-        return repository.findByMerchantId(merchantId)
-                .stream()
-                .map(mapper::toDomain)
-                .toList();
+    public PaymentPage findByMerchantId(String merchantId, int page, int size) {
+        var pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        return toPaymentPage(repository.findByMerchantId(merchantId, pageable));
+    }
+
+    private PaymentPage toPaymentPage(Page<PaymentEntity> springPage) {
+        List<Payment> content = springPage.getContent().stream().map(mapper::toDomain).toList();
+        return new PaymentPage(
+                content,
+                springPage.getNumber(),
+                springPage.getSize(),
+                springPage.getTotalElements(),
+                springPage.getTotalPages()
+        );
     }
 }
