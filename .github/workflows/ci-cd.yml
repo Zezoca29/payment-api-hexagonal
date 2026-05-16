@@ -18,21 +18,8 @@ jobs:
   test:
     name: Test & Coverage
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: paymentsdb_test
-          POSTGRES_USER: payments
-          POSTGRES_PASSWORD: payments
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
+    # No services block — integration tests use TestContainers to spin up
+    # their own isolated PostgreSQL container via Docker (available on ubuntu-latest).
 
     steps:
       - name: Checkout code
@@ -46,14 +33,11 @@ jobs:
           cache: maven
 
       - name: Run unit tests
-        run: mvn test -pl . -Dtest="**/unit/**" -q
+        run: mvn test -Dtest="com.hexapay.payments.unit.**" -q
 
-      - name: Run all tests with coverage
+      - name: Run all tests with coverage (TestContainers handles the DB)
         run: mvn verify -q
         env:
-          DATABASE_URL: jdbc:postgresql://localhost:5432/paymentsdb_test
-          DATABASE_USERNAME: payments
-          DATABASE_PASSWORD: payments
           SPRING_PROFILES_ACTIVE: test
 
       - name: Upload JaCoCo coverage report

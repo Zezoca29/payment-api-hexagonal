@@ -1,9 +1,11 @@
 spring:
+  # Datasource URL is intentionally omitted here.
+  # Integration tests use @DynamicPropertySource + TestContainers to inject the real URL
+  # before the ApplicationContext is created. Unit tests do not need a datasource at all.
   datasource:
-    # TestContainers will override this via @DynamicPropertySource
-    url: jdbc:postgresql://localhost:5432/paymentsdb_test
     username: payments
     password: payments
+    driver-class-name: org.postgresql.Driver
   jpa:
     show-sql: true
     hibernate:
