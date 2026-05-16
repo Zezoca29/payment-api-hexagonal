@@ -89,7 +89,7 @@ class QueryPaymentServiceTest {
         LocalDateTime to = LocalDateTime.of(2024, 1, 1, 0, 0);
 
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> queryPaymentService.findByDateRange(from, to))
+                .isThrownBy(() -> queryPaymentService.findByDateRange(from, to, 0, 20))
                 .withMessageContaining("'from' date must be before");
 
         verifyNoInteractions(loadPaymentPort);
