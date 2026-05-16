@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    # TestContainers will override this via @DynamicPropertySource
+    url: jdbc:postgresql://localhost:5432/paymentsdb_test
+    username: payments
+    password: payments
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+logging:
+  level:
+    com.hexapay: DEBUG

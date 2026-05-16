@@ -1,0 +1,32 @@
+# ═══ Compiled output ═══
+target/
+*.class
+*.jar
+*.war
+
+# ═══ IDE ═══
+.idea/
+*.iml
+*.iws
+.vscode/
+*.swp
+*.swo
+
+# ═══ OS ═══
+.DS_Store
+Thumbs.db
+
+# ═══ Maven ═══
+.mvn/repository/
+
+# ═══ Logs ═══
+*.log
+logs/
+
+# ═══ Environment ═══
+.env
+.env.local
+.env.*.local
+
+# ═══ Docker volumes ═══
+docker/volumes/
